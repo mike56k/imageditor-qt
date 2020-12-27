@@ -15,12 +15,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
 
-set(OpenCV_DIR ${OpenCV_DIR} D:/opencv/release)
+#set(OpenCV_DIR ${OpenCV_DIR} D:/opencv/release)
 find_package(OpenCV REQUIRED )
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt5 COMPONENTS Gui REQUIRED)
+
+
 add_executable(cmakeImageEditor
     main.cpp
     imageviewer.cpp
@@ -32,14 +34,12 @@ add_executable(cmakeImageEditor
     effectwindow.ui
     imagelabelwithrubberband.cpp
     imagelabelwithrubberband.h
-    paintwindow.cpp
-    paintwindow.h
-
-    imagelabelfordrawing.cpp
-    imagelabelfordrawing.h
-    paintwindow.ui
+    resource.qrc
     commands.cpp
     commands.h
+    colorsize.cpp
+    colorsize.h
+    colorsize.ui
 )
 
 

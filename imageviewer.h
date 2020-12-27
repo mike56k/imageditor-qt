@@ -11,7 +11,24 @@
 #include <QUndoCommand>
 #include "effectwindow.h"
 #include "imagelabelwithrubberband.h"
-#include "paintwindow.h"
+#include <QPen>
+#include <QColorDialog>
+#include <QPainter>
+#include <QLayout>
+#include "colorsize.h"
+#include <QMenuBar>
+#include <QMessageBox>
+#include <QMimeData>
+#include <QScreen>
+#include <QScrollArea>
+#include <QScrollBar>
+#include <QStandardPaths>
+#include <QStatusBar>
+#include <QObject>
+#include <QToolBar>
+#include <effectwindow.h>
+#include <QDockWidget>
+#include <QPainterPath>
 #if defined(QT_PRINTSUPPORT_LIB)
 #endif
 
@@ -42,11 +59,12 @@ private slots:
     void zoomOut();
     void normalSize();
     void fitToWindow();
-    void about();
+
     void crop();
     void paint();
     void showSelectedArea();
-
+    void paintPoint(int val);
+    void paintText(QString);
     void showBrightnessEffect();
     void showSepia();
     void showHistogramEqualization();
@@ -60,13 +78,17 @@ private slots:
     void medianAlgorithm(int);
     void bilateralAlgorithm(int);
     void dialogIsFinished(int);
-
+    void changeColor();
+    void changePenWidth(int);
+    void addText();
+    void closeEvent(QCloseEvent *event);
 signals:
     void imageChanged();
 private:
     void createActions();
     void createMenus();
     void updateActions();
+    void initColorSizeWidget(QString);
     bool saveFile(const QString &fileName);
 
     void scaleImage(double factor);
@@ -75,16 +97,23 @@ private:
     cv::Mat generateHistogram(const cv::Mat& inputImage);
     QImage image;
     QImage imageAfterEffect;
+    QPixmap *pixmapForPainting = nullptr;
+    QPainter *painter = nullptr;
+    QPen pen;
+    QColor color;
+    int penWidth = 0;
     ImageLabelWithRubberBand *imageLabel = nullptr;
     QScrollArea *scrollArea = nullptr;
     double scaleFactor = 1;
+    int countOfScales = 0;
+
     QAction *saveAsAct = nullptr;
     QAction *copyAct = nullptr;
     QAction *zoomInAct = nullptr;
     QAction *zoomOutAct = nullptr;
     QAction *normalSizeAct = nullptr;
     QAction *fitToWindowAct = nullptr;
-
+    QAction *openAct = nullptr;
     QAction *brightnessAct = nullptr;
     QAction *blurHAct = nullptr;
     QAction *blurGAct = nullptr;
@@ -92,17 +121,15 @@ private:
     QAction *blurBAct = nullptr;
     QAction *histAct = nullptr;
     QAction *sepiaAct = nullptr;
-
     QAction *undoAction = nullptr;
     QAction *redoAction = nullptr;
-
     QAction *cropAct = nullptr;
     QAction *paintAct = nullptr;
-
+    QAction *changeColorAct = nullptr;
     effectwindow *w = nullptr;
-    paintwindow *pw = nullptr;
-
+    QDockWidget *dockWidget = nullptr;
     QUndoStack *undoStack = nullptr;
+    QAction *addTextAct = nullptr;
 };
 
 #endif

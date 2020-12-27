@@ -4,6 +4,7 @@
 #include <QRubberBand>
 #include <QPoint>
 #include <QMouseEvent>
+#include <QInputDialog>
 class ImageLabelWithRubberBand : public QLabel
 {
    Q_OBJECT
@@ -11,9 +12,11 @@ public:
     explicit ImageLabelWithRubberBand(QWidget *parent = 0) : QLabel(parent), rubberBand(0) {}
     QPoint begin;
     QPoint end;
-    bool cropState = false;
+    int state = -1;
 signals:
     void areaSelected();
+    void drawing(int);
+    void generateText(QString);
 private:
    QRubberBand* rubberBand = nullptr;
 

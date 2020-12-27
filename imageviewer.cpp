@@ -5,32 +5,20 @@
 #include <QFileDialog>
 #include <QImageReader>
 #include <QImageWriter>
-#include <QLabel>
-#include <QMenuBar>
-#include <QMessageBox>
-#include <QMimeData>
-#include <QScreen>
-#include <QScrollArea>
-#include <QScrollBar>
-#include <QStandardPaths>
-#include <QStatusBar>
-#include <QObject>
-#include <QToolBar>
-#include <effectwindow.h>
 #include "commands.h"
-#include <iostream>
-
 ImageViewer::ImageViewer(QWidget *parent)
    : QMainWindow(parent), imageLabel(new ImageLabelWithRubberBand)
    , scrollArea(new QScrollArea)
 {
+    setWindowIcon(QPixmap(":/icons/paint-brush.png"));
     undoStack = new QUndoStack(this);
     imageLabel->setBackgroundRole(QPalette::Base);
     imageLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     imageLabel->setScaledContents(true);
 
     QObject::connect(imageLabel, SIGNAL(areaSelected()), this, SLOT(showSelectedArea()));
-
+    QObject::connect(imageLabel, SIGNAL(drawing(int)), this, SLOT(paintPoint(int)));
+    QObject::connect(imageLabel, SIGNAL(generateText(QString)), this, SLOT(paintText(QString)));
     scrollArea->setBackgroundRole(QPalette::Dark);
     scrollArea->setWidget(imageLabel);
     scrollArea->setVisible(false);
@@ -45,7 +33,7 @@ ImageViewer::ImageViewer(QWidget *parent)
 QToolBar *ImageViewer::createToolBar()
 {
     QToolBar* ptb = new QToolBar("Linker ToolBar");
-
+    ptb->addAction(openAct);
     ptb->addAction(saveAsAct);
     ptb->addAction(copyAct);
     ptb->addAction(zoomInAct);
@@ -56,6 +44,7 @@ QToolBar *ImageViewer::createToolBar()
     ptb->addAction(undoAction);
     ptb->addAction(redoAction);
     ptb->addAction(paintAct);
+    ptb->addAction(addTextAct);
     return ptb;
 }
 
@@ -85,6 +74,9 @@ void ImageViewer::setImage(const QImage &newImage)
 {
     image = newImage;
     imageAfterEffect = image;
+
+    pixmapForPainting = new QPixmap(QPixmap::fromImage(image));
+    painter = new QPainter(pixmapForPainting);
     w = new effectwindow(image, imageAfterEffect);
     w->setModal(true);
     QObject::connect(w, SIGNAL(finished (int)), this, SLOT(dialogIsFinished(int)));
@@ -93,9 +85,12 @@ void ImageViewer::setImage(const QImage &newImage)
         image.convertToColorSpace(QColorSpace::SRgb);
     imageLabel->setPixmap(QPixmap::fromImage(image));
     scaleFactor = 1.0;
+    countOfScales = 0;
     scrollArea->setVisible(true);
     fitToWindowAct->setEnabled(true);
     cropAct->setEnabled(true);
+    addTextAct->setEnabled(true);
+    paintAct->setEnabled(true);
     updateActions();
     if (!fitToWindowAct->isChecked())
         imageLabel->adjustSize();
@@ -143,7 +138,6 @@ void ImageViewer::open()
 {
     QFileDialog dialog(this, tr("Open File"));
     initializeImageFileDialog(dialog, QFileDialog::AcceptOpen);
-
     while (dialog.exec() == QDialog::Accepted && !loadFile(dialog.selectedFiles().first())) {}
 }
 
@@ -191,7 +185,9 @@ void ImageViewer::normalSize()
 
 {
     imageLabel->adjustSize();
-    scaleFactor = 1.0;
+    scaleFactor = 1;
+    countOfScales = 0;
+    updateActions();
 }
 
 void ImageViewer::fitToWindow()
@@ -207,12 +203,16 @@ void ImageViewer::fitToWindow()
 void ImageViewer::zoomIn()
 
 {
+    countOfScales++;
     scaleImage(1.25);
+
 }
 
 void ImageViewer::zoomOut()
 {
+    countOfScales--;
     scaleImage(0.8);
+
 }
 
 
@@ -225,38 +225,52 @@ void ImageViewer::saveAs()
     while (dialog.exec() == QDialog::Accepted && !saveFile(dialog.selectedFiles().first())) {}
 }
 
-void ImageViewer::about()
 
-{
-    QMessageBox::about(this, tr("About Image Viewer"),
-            tr("<p>The <b>Image Viewer</b> example shows how to combine QLabel "
-               "and QScrollArea to display an image. QLabel is typically used "
-               "for displaying a text, but it can also display an image. "
-               "QScrollArea provides a scrolling view around another widget. "
-               "If the child widget exceeds the size of the frame, QScrollArea "
-               "automatically provides scroll bars. </p><p>The example "
-               "demonstrates how QLabel's ability to scale its contents "
-               "(QLabel::scaledContents), and QScrollArea's ability to "
-               "automatically resize its contents "
-               "(QScrollArea::widgetResizable), can be used to implement "
-               "zooming and scaling features."));
-}
 
 void ImageViewer::crop()
 {
-
-    imageLabel->cropState = cropAct->isChecked();
+    if(cropAct->isChecked()){
+        imageLabel->state = 0;
+    }
+    else{
+        imageLabel->state = -1;
+    }
     updateActions();
 }
 
-void ImageViewer::paint()
-{
-    pw = new paintwindow(image, &imageAfterEffect);
-    QObject::connect(pw, SIGNAL(finished(int)),this, SLOT(dialogIsFinished(int)));
 
-    pw->show();
+void ImageViewer::paintPoint(int val){
+    painter->setRenderHint(QPainter::Antialiasing);
+    painter->setPen(pen);
+    painter->drawLine(imageLabel->begin, imageLabel->end);
+
+    imageAfterEffect = pixmapForPainting->toImage();
+    if(val == 2){
+        QUndoCommand *addCommand = new AddCommand(imageAfterEffect, image, this);
+        undoStack->push(addCommand);
+    }
+    else {
+
+        imageLabel->setPixmap(QPixmap::fromImage(imageAfterEffect));
+    }
+
 }
 
+void ImageViewer::paintText(QString text)
+{
+    QPainterPath path;
+
+
+    if(!text.isEmpty()){
+        QFont timesFont("Times",  penWidth + 10);
+        path.addText(imageLabel->begin, timesFont, text);
+        painter->setBrush(color);
+        painter->drawPath(path);
+        imageAfterEffect = pixmapForPainting->toImage();
+        QUndoCommand *addCommand = new AddCommand(imageAfterEffect, image, this);
+        undoStack->push(addCommand);
+    }
+}
 void ImageViewer::showSelectedArea()
 {
     QPoint a(imageLabel->begin), b(imageLabel->end);
@@ -287,12 +301,78 @@ void ImageViewer::showSelectedArea()
 }
 void ImageViewer::dialogIsFinished(int result){ //this is a slot
    if(result == QDialog::Accepted){
+
        QUndoCommand *addCommand = new AddCommand(imageAfterEffect, image, this);
-       std::cout << "HERE" << std::endl;
        undoStack->push(addCommand);
        return;
    }
    w->slider->setEnabled(true);
+}
+
+void ImageViewer::changeColor()
+{
+    color = QColorDialog::getColor();
+    pen.setColor(color);
+}
+
+void ImageViewer::changePenWidth(int n)
+{
+
+    penWidth = n ;
+    pen.setWidth(penWidth);
+}
+void ImageViewer::paint()
+{
+    if(paintAct->isChecked()){
+        imageLabel->state = 1;
+        initColorSizeWidget("Brush Settings");
+    }
+    else{
+        imageLabel->state = -1;
+        dockWidget->close();
+    }
+    updateActions();
+}
+void ImageViewer::addText()
+{
+    if(addTextAct->isChecked()){
+        imageLabel->state = 2;
+        initColorSizeWidget("Text Settings");
+
+    }
+    else{
+        dockWidget->close();
+        imageLabel->state = -1;
+    }
+    updateActions();
+
+}
+
+void ImageViewer::closeEvent(QCloseEvent *)
+{
+    if(!image.isNull()){
+        QMessageBox::StandardButton ret;
+            ret = QMessageBox::question( this,  QApplication::applicationName(), tr("Do you want to save image before closing Image Editor?"),
+                                         QMessageBox::Yes | QMessageBox::No , QMessageBox::No );
+            if(ret == QMessageBox::Yes){
+                saveAs();
+            }
+    }
+}
+void ImageViewer::initColorSizeWidget(QString title)
+{
+    ColorSize *colorSizeWidget = new ColorSize;
+
+    QObject::connect(colorSizeWidget->changeColorBtn, SIGNAL(clicked()), this, SLOT(changeColor()));
+    colorSizeWidget->slider->setValue(penWidth);
+    QObject::connect(colorSizeWidget->slider, SIGNAL(valueChanged(int)), this, SLOT(changePenWidth(int)));
+
+
+    dockWidget = new QDockWidget(title, this);
+         dockWidget->setAllowedAreas(Qt::LeftDockWidgetArea |
+                                     Qt::RightDockWidgetArea);
+         dockWidget->setWidget(colorSizeWidget);
+         addDockWidget(Qt::RightDockWidgetArea, dockWidget);
 }
 
 void ImageViewer::showBrightnessEffect()
@@ -465,77 +545,92 @@ void ImageViewer::createActions()
 {
     QMenu *fileMenu = menuBar()->addMenu(tr("&File"));
 
-    QAction *openAct = fileMenu->addAction(tr("&Open..."), this, &ImageViewer::open);
+    openAct = fileMenu->addAction(QPixmap(":/icons/open-file.png"), tr("&Open..."), this, &ImageViewer::open);
     openAct->setShortcut(QKeySequence::Open);
 
-    saveAsAct = fileMenu->addAction(tr("&Save As..."), this, &ImageViewer::saveAs);
+    saveAsAct = fileMenu->addAction(QPixmap(":/icons/save.png"), tr("&Save As..."), this, &ImageViewer::saveAs);
     saveAsAct->setEnabled(false);
 
 
     fileMenu->addSeparator();
 
-    QAction *exitAct = fileMenu->addAction(tr("E&xit"), this, &QWidget::close);
+    QAction *exitAct = fileMenu->addAction(QPixmap(":/icons/exit.png"), tr("E&xit"), this, &QWidget::close);
     exitAct->setShortcut(tr("Ctrl+Q"));
 
     QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
 
-    copyAct = editMenu->addAction(tr("&Copy"), this, &ImageViewer::copy);
+    copyAct = editMenu->addAction(QPixmap(":/icons/copy.png"),tr("&Copy"), this, &ImageViewer::copy);
     copyAct->setShortcut(QKeySequence::Copy);
     copyAct->setEnabled(false);
 
-    cropAct = editMenu->addAction(tr("&Crop Mode"), this, &ImageViewer::crop);
+
+    undoAction = undoStack->createUndoAction(this, tr("&Undo"));
+
+    undoAction->setShortcuts(QKeySequence::Undo);
+    undoAction->setIcon(QPixmap(":/icons/undo.png"));
+    redoAction = undoStack->createRedoAction(this, tr("&Redo"));
+    redoAction->setShortcuts(QKeySequence::Redo);
+    redoAction->setIcon(QPixmap(":/icons/redo.png"));
+    editMenu->addAction( undoAction);
+    editMenu->addAction(redoAction);
+
+
+    QAction *pasteAct = editMenu->addAction(QPixmap(":/icons/paste.png"), tr("&Paste"), this, &ImageViewer::paste);
+    pasteAct->setShortcut(QKeySequence::Paste);
+
+    editMenu->addSeparator();
+
+    cropAct = editMenu->addAction(QPixmap(":/icons/crop.png"),tr("&Crop Mode"), this, &ImageViewer::crop);
     cropAct->setEnabled(false);
     cropAct->setCheckable(true);
     cropAct->setShortcut(tr("Ctrl+R"));
 
-    paintAct = editMenu->addAction(tr("&Paint"), this, &ImageViewer::paint);
+    paintAct = editMenu->addAction(QPixmap(":/icons/paint-brush.png"),tr("&Paint Mode"), this, &ImageViewer::paint);
+    paintAct->setCheckable(true);
     paintAct->setShortcut(tr("Ctrl+P"));
     paintAct->setEnabled(false);
 
-    undoAction = undoStack->createUndoAction(this, tr("&Undo"));
-    undoAction->setShortcuts(QKeySequence::Undo);
-
-    redoAction = undoStack->createRedoAction(this, tr("&Redo"));
-    redoAction->setShortcuts(QKeySequence::Redo);
-    editMenu->addAction(undoAction);
-    editMenu->addAction(redoAction);
+    addTextAct = editMenu->addAction(QPixmap(":/icons/text.png"), tr("&Text"), this, &ImageViewer::addText);
+    addTextAct->setCheckable(true);
+    addTextAct->setEnabled(false);
+    addTextAct->setShortcut(tr("Ctrl+N"));
 
 
-    QAction *pasteAct = editMenu->addAction(tr("&Paste"), this, &ImageViewer::paste);
-    pasteAct->setShortcut(QKeySequence::Paste);
+    changeColorAct = editMenu->addAction(QPixmap(":/icons/color-wheel.png"), tr("&Change Color"), this, &ImageViewer::changeColor);
+
 
     QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
 
-    zoomInAct = viewMenu->addAction(tr("Zoom &In (25%)"), this, &ImageViewer::zoomIn);
+    zoomInAct = viewMenu->addAction(QPixmap(":/icons/zoom-in.png"),tr("Zoom &In (25%)"), this, &ImageViewer::zoomIn);
     zoomInAct->setShortcut(QKeySequence::ZoomIn);
     zoomInAct->setEnabled(false);
 
-    zoomOutAct = viewMenu->addAction(tr("Zoom &Out (25%)"), this, &ImageViewer::zoomOut);
+    zoomOutAct = viewMenu->addAction(QPixmap(":/icons/zoom-out.png"),tr("Zoom &Out (25%)"), this, &ImageViewer::zoomOut);
     zoomOutAct->setShortcut(QKeySequence::ZoomOut);
     zoomOutAct->setEnabled(false);
 
-    normalSizeAct = viewMenu->addAction(tr("&Normal Size"), this, &ImageViewer::normalSize);
+    normalSizeAct = viewMenu->addAction(QPixmap(":/icons/reduce.png"),tr("&Normal Size"), this, &ImageViewer::normalSize);
     normalSizeAct->setShortcut(tr("Ctrl+S"));
     normalSizeAct->setEnabled(false);
 
     viewMenu->addSeparator();
 
-    fitToWindowAct = viewMenu->addAction(tr("&Fit to Window"), this, &ImageViewer::fitToWindow);
+    fitToWindowAct = viewMenu->addAction(QPixmap(":/icons/increase.png"),tr("&Fit to Window"), this, &ImageViewer::fitToWindow);
     fitToWindowAct->setEnabled(false);
     fitToWindowAct->setCheckable(true);
     fitToWindowAct->setShortcut(tr("Ctrl+F"));
 
     QMenu *filterMenu = menuBar()->addMenu(tr("&Filter"));
-    brightnessAct = filterMenu->addAction(tr("Brightness"),this,&ImageViewer::showBrightnessEffect);
+    brightnessAct = filterMenu->addAction(QPixmap(":/icons/brightness.png"), tr("Brightness"),this,&ImageViewer::showBrightnessEffect);
     brightnessAct->setShortcut(tr("Ctrl+B"));
     brightnessAct->setEnabled(false);
 
-    histAct = filterMenu->addAction(tr("Histogram Equalization"), this, &ImageViewer::showHistogramEqualization);
+    histAct = filterMenu->addAction(QPixmap(":/icons/histogram.png"), tr("Histogram Equalization"), this, &ImageViewer::showHistogramEqualization);
     histAct->setShortcut(tr("Ctrl+H"));
     histAct->setEnabled(false);
 
 
-    sepiaAct = filterMenu->addAction(tr("Sepia"), this, &ImageViewer::showSepia);
+    sepiaAct = filterMenu->addAction(QPixmap(":/icons/effect.png"),tr("Sepia"), this, &ImageViewer::showSepia);
     sepiaAct->setShortcut(tr("Ctrl+A"));
     sepiaAct->setEnabled(false);
 
@@ -556,9 +651,6 @@ void ImageViewer::createActions()
     blurBAct->setShortcut(tr("Ctrl+T"));
     blurBAct->setEnabled(false);
 
-    QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
-
-    helpMenu->addAction(tr("&About"), this, &ImageViewer::about);
 }
 
 void ImageViewer::updateActions()
@@ -572,18 +664,17 @@ void ImageViewer::updateActions()
     blurGAct->setEnabled(!image.isNull());
     blurMAct->setEnabled(!image.isNull());
     blurBAct->setEnabled(!image.isNull());
-    paintAct->setEnabled(!image.isNull());
-    zoomInAct->setEnabled(!fitToWindowAct->isChecked());
-    zoomOutAct->setEnabled(!fitToWindowAct->isChecked());
-    normalSizeAct->setEnabled(!fitToWindowAct->isChecked());
-    cropAct->setEnabled(!fitToWindowAct->isChecked());
-
-    zoomInAct->setEnabled(!cropAct->isChecked() && !fitToWindowAct->isChecked());
-    zoomOutAct->setEnabled(!cropAct->isChecked() && !fitToWindowAct->isChecked());
-    fitToWindowAct->setEnabled(!cropAct->isChecked());
-    normalSizeAct->setEnabled(!cropAct->isChecked() && !fitToWindowAct->isChecked());
+    cropAct->setEnabled(!fitToWindowAct->isChecked() && !paintAct->isChecked() && !addTextAct->isChecked() && countOfScales == 0);
+    paintAct->setEnabled(!fitToWindowAct->isChecked() && !addTextAct->isChecked() && !cropAct->isChecked() && countOfScales == 0);
+    addTextAct->setEnabled(!fitToWindowAct->isChecked() && !paintAct->isChecked() && !cropAct->isChecked() && countOfScales == 0);
+    zoomInAct->setEnabled(!cropAct->isChecked() && !fitToWindowAct->isChecked() && !paintAct->isChecked() && !addTextAct->isChecked() && countOfScales < 5);
+    zoomOutAct->setEnabled(!cropAct->isChecked() && !fitToWindowAct->isChecked() && !paintAct->isChecked() && !addTextAct->isChecked() && countOfScales > -5);
+    fitToWindowAct->setEnabled(!cropAct->isChecked() && !paintAct->isChecked() && !paintAct->isChecked() && !addTextAct->isChecked());
+    normalSizeAct->setEnabled(!cropAct->isChecked() && !fitToWindowAct->isChecked() && !paintAct->isChecked() && !addTextAct->isChecked() && countOfScales!=0);
 
 }
+
+
 
 void ImageViewer::scaleImage(double factor)
 
@@ -593,9 +684,8 @@ void ImageViewer::scaleImage(double factor)
 
     adjustScrollBar(scrollArea->horizontalScrollBar(), factor);
     adjustScrollBar(scrollArea->verticalScrollBar(), factor);
+    updateActions();
 
-    zoomInAct->setEnabled(scaleFactor < 3.0);
-    zoomOutAct->setEnabled(scaleFactor > 0.333);
 }
 
 void ImageViewer::adjustScrollBar(QScrollBar *scrollBar, double factor)

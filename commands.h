@@ -15,7 +15,6 @@ private:
     QImage image;
     QImage imageBefore;
     ImageViewer *imageViewer = nullptr;
-
 };
 
 #endif

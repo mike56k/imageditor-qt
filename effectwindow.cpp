@@ -54,6 +54,7 @@ void effectwindow::repaintEffectWindow(){
 void effectwindow::init(QImage &afterImage, QImage &beforeImage)
 {
     ui->setupUi(this);
+    setWindowIcon(QPixmap(":/icons/effects.png"));
     beforeImageLabel = new QLabel;
     afterImageLabel = new QLabel;
     beforeScrollArea = new QScrollArea;

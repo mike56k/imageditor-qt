@@ -1,0 +1,23 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/brightness.png</file>
+        <file>icons/exit.png</file>
+        <file>icons/histogram.png</file>
+        <file>icons/save.png</file>
+        <file>icons/zoom-in.png</file>
+        <file>icons/zoom-out.png</file>
+        <file>icons/copy.png</file>
+        <file>icons/open-file.png</file>
+        <file>icons/paste.png</file>
+        <file>icons/crop.png</file>
+        <file>icons/undo.png</file>
+        <file>icons/redo.png</file>
+        <file>icons/paint-brush.png</file>
+        <file>icons/reduce.png</file>
+        <file>icons/color-wheel.png</file>
+        <file>icons/effect.png</file>
+        <file>icons/effects.png</file>
+        <file>icons/increase.png</file>
+        <file>icons/text.png</file>
+    </qresource>
+</RCC>
