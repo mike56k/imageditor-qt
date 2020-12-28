@@ -243,7 +243,7 @@ void ImageViewer::paintPoint(int val){
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(pen);
     painter->drawLine(imageLabel->begin, imageLabel->end);
-
+    
     imageAfterEffect = pixmapForPainting->toImage();
     if(val == 2){
         QUndoCommand *addCommand = new AddCommand(imageAfterEffect, image, this);

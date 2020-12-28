@@ -4,6 +4,7 @@
 
 #include <QMainWindow>
 #include <QImage>
+
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc/imgproc_c.h>
 #include <convert.h>
@@ -29,6 +30,7 @@
 #include <effectwindow.h>
 #include <QDockWidget>
 #include <QPainterPath>
+
 #if defined(QT_PRINTSUPPORT_LIB)
 #endif
 
