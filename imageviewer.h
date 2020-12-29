@@ -53,13 +53,33 @@ public:
     QToolBar* createToolBar();
     void setImage(const QImage &newImage);
 private slots:
+    /*!
+     * \brief open Срабатывает при нажатии на кнопку открытия файла,
+     * открывает файловое окно, передает полученный путь в loadFile
+     */
     void open();
+    /*!
+     * \brief saveAs Срабатывает при нажатии на кнопку сохранения файла,
+     * открывает файловое окно, передает полученный путь в saveFile
+     */
     void saveAs();
     void copy();
     void paste();
+    /*!
+     * \brief zoomIn приближает изображение
+     */
     void zoomIn();
+    /*!
+     * \brief zoomOut отдаляет изображение
+     */
     void zoomOut();
+    /*!
+     * \brief normalSize восстанавливает исходный масштаб изображения
+     */
     void normalSize();
+    /*!
+     * \brief fitToWindow растягивает изображение по ширине окна
+     */
     void fitToWindow();
 
     void crop();
@@ -74,12 +94,32 @@ private slots:
     void showGaussianEffect();
     void showMedianEffect();
     void showBilateralEffect();
-    void brightnessAlgorithm(int);
-    void homogeneousAlgorithm(int);
-    void gaussianAlgorithm(int);
-    void medianAlgorithm(int);
-    void bilateralAlgorithm(int);
+    void brightnessAlgorithm();
+    /*!
+     * \brief homogeneousAlgorithm Применяет гомогенное размытие
+     */
+    void homogeneousAlgorithm();
+    /*!
+     * \brief gaussianAlgorithm Применяет гауссово размытие
+     */
+    void gaussianAlgorithm();
+    /*!
+     * \brief medianAlgorithm Применяет медианный алгоритм размытия
+     */
+    void medianAlgorithm();
+    /*!
+     * \brief bilateralAlgorithm Применяет двусторонний алгоритм размытия
+     */
+    void bilateralAlgorithm();
+    /*!
+     * \brief dialogIsFinished Слот, который срабатывает в момент закрытия окна эффектов.
+     * Если пользователь принял изменения, то добавляет измененное изображение в стэк сделанных действий.
+     */
     void dialogIsFinished(int);
+    /*!
+     * \brief changeColor Слот, который срабатывает при нажатии на кнопку изменения цвета.
+     * Устанавливает цвет кисти.
+     */
     void changeColor();
     void changePenWidth(int);
     void addText();
@@ -95,6 +135,10 @@ private:
 
     void scaleImage(double factor);
     void adjustScrollBar(QScrollBar *scrollBar, double factor);
+    /*!
+     * \brief changeImage сообщает об изменении изображения, после чего окно эффектов перерисовывается.
+     * \param newImage Новое изображение, полученное после применения эффекта к старому изображению.
+     */
     void changeImage(QImage &newImage);
     cv::Mat generateHistogram(const cv::Mat& inputImage);
     QImage image;
@@ -107,6 +151,12 @@ private:
     ImageLabelWithRubberBand *imageLabel = nullptr;
     QScrollArea *scrollArea = nullptr;
     double scaleFactor = 1;
+    /*!
+     * \brief countOfScales Количество приближений. Используется для контроля приближения и отдаления изображения.
+     * Если равно нулю, то изображение находится в исходном положении.
+     * Если меньше нуля, то отдалено.
+     * Если больше нуля, то приближено.
+     */
     int countOfScales = 0;
 
     QAction *saveAsAct = nullptr;

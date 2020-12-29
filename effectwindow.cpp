@@ -41,10 +41,7 @@ effectwindow::~effectwindow()
 {
     delete ui;
 }
-void effectwindow::onImageChanged(QImage &newImage){
-    imageAfter = newImage;
-    repaintEffectWindow();
-}
+
 void effectwindow::repaintEffectWindow(){
     beforeImageLabel->setPixmap(QPixmap::fromImage(imageBefore));
     afterImageLabel->setPixmap(QPixmap::fromImage(imageAfter));

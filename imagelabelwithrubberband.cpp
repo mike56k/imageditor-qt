@@ -19,9 +19,10 @@ void ImageLabelWithRubberBand::mousePressEvent(QMouseEvent *event)
     }
     case 2: {
         begin = event->pos();
+        bool ok;
         QString text = QInputDialog::getText(this, tr("Text Shape"),
                                              tr("Enter text:"),
-                                             QLineEdit::Normal, tr("Some Text"));
+                                             QLineEdit::Normal, tr("Some Text"),&ok,Qt::MSWindowsFixedSizeDialogHint);
         emit generateText(text);
         break;
     }

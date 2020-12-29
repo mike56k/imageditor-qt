@@ -20,7 +20,12 @@ find_package(Qt5 COMPONENTS Core REQUIRED)
 find_package(Qt5 COMPONENTS Gui REQUIRED)
 set(BUILD_SHARED_LIBS OFF)
 
-#set(OpenCV_DIR ${OpenCV_DIR} D:/opencv/release)
+option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
+
+#set(OpenCV_install_DIR ${OpenCV_install_DIR})
+
+#set(OpenCV_install_DIR ${OpenCV_DIR} CACHE PATH "Path to OpenCV Libs")
+
 find_package(OpenCV REQUIRED )
 include_directories(${OpenCV_INCLUDE_DIRS})
 
@@ -29,12 +34,7 @@ list(GET QT_CORE_INCLUDE_DIRS 0 QT_CORE_MAIN_INCLUDE_DIR)
 get_filename_component(QT_MAIN_DIR ${QT_CORE_MAIN_INCLUDE_DIR}/.. ABSOLUTE)
 
 
-#install(DIRECTORY ${OpenCV_DIR}
-#           DESTINATION ${PROJECT_BINARY_DIR}/Release USE_SOURCE_PERMISSIONS
-#            CONFIGURATIONS Release)
-#install(DIRECTORY ${OpenCV_DIR}
-#                DESTINATION ${PROJECT_BINARY_DIR}/Debug USE_SOURCE_PERMISSIONS
-#                CONFIGURATIONS Debug)
+
 add_executable(cmakeImageEditor
     main.cpp
     imageviewer.cpp
@@ -62,12 +62,25 @@ install(FILES $<TARGET_FILE:Qt5::Gui> DESTINATION ${PROJECT_BINARY_DIR}/Debug CO
 install(FILES $<TARGET_FILE:Qt5::Core> DESTINATION ${PROJECT_BINARY_DIR}/Release CONFIGURATIONS Release)
 install(FILES $<TARGET_FILE:Qt5::Core> DESTINATION ${PROJECT_BINARY_DIR}/Debug CONFIGURATIONS Debug)
 
-install(FILES D:/opencv/build/x64/vc15/bin/opencv_world440.dll
-           DESTINATION ${PROJECT_BINARY_DIR}/Release
-            CONFIGURATIONS Release)
-install(FILES D:/opencv/build/x64/vc15/bin/opencv_world440d.dll
-                DESTINATION ${PROJECT_BINARY_DIR}/Debug
-                CONFIGURATIONS Debug)
+#install(DIRECTORY ${OpenCV_install_DIR}/
+#DESTINATION ${PROJECT_BINARY_DIR}/Release USE_SOURCE_PERMISSIONS
+#CONFIGURATIONS Release)
+#install(DIRECTORY ${OpenCV_install_DIR}/
+#DESTINATION ${PROJECT_BINARY_DIR}/Debug USE_SOURCE_PERMISSIONS
+#CONFIGURATIONS Debug)
 
+
+install(DIRECTORY ${QT_MAIN_DIR}/plugins/platforms/
+            DESTINATION ${PROJECT_BINARY_DIR}/Release/Plugins/platforms USE_SOURCE_PERMISSIONS
+            CONFIGURATIONS Release)
+install(DIRECTORY ${QT_MAIN_DIR}/plugins/platforms/
+                DESTINATION ${PROJECT_BINARY_DIR}/Debug/Plugins/platforms USE_SOURCE_PERMISSIONS
+                CONFIGURATIONS Debug)
+install(DIRECTORY ${QT_MAIN_DIR}/plugins/imageformats/
+                DESTINATION ${PROJECT_BINARY_DIR}/Release/Plugins/imageformats USE_SOURCE_PERMISSIONS
+                CONFIGURATIONS Release)
+install(DIRECTORY ${QT_MAIN_DIR}/plugins/imageformats/
+                DESTINATION ${PROJECT_BINARY_DIR}/Debug/Plugins/imageformats USE_SOURCE_PERMISSIONS
+                CONFIGURATIONS Debug)
 
 target_link_libraries(cmakeImageEditor PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${OpenCV_LIBS} PRIVATE Qt5::Gui)

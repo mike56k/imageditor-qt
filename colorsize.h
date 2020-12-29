@@ -9,7 +9,10 @@
 namespace Ui {
 class ColorSize;
 }
-
+/*!
+ * \brief The ColorSize class
+ * Класс представляет собой виджет, содержащий кнопку изменения цвета и слайдер для изменения размера
+ */
 class ColorSize : public QWidget
 {
     Q_OBJECT

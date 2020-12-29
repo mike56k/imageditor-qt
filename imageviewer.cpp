@@ -5,6 +5,7 @@
 #include <QFileDialog>
 #include <QImageReader>
 #include <QImageWriter>
+
 #include "commands.h"
 ImageViewer::ImageViewer(QWidget *parent)
    : QMainWindow(parent), imageLabel(new ImageLabelWithRubberBand)
@@ -28,6 +29,9 @@ ImageViewer::ImageViewer(QWidget *parent)
 
     resize(QGuiApplication::primaryScreen()->availableSize() * 3 / 5);
     addToolBar(Qt::LeftToolBarArea, createToolBar());
+    QPixmap defaultPixmap(QGuiApplication::primaryScreen()->availableSize() * 2 / 5);
+    defaultPixmap.fill(Qt::white);
+    setImage(defaultPixmap.toImage());
 }
 
 QToolBar *ImageViewer::createToolBar()
@@ -50,6 +54,8 @@ QToolBar *ImageViewer::createToolBar()
 
 bool ImageViewer::loadFile(const QString &fileName)
 {
+    
+
     QImageReader reader(fileName);
     reader.setAutoTransform(true);
     const QImage newImage = reader.read();
@@ -97,50 +103,61 @@ void ImageViewer::setImage(const QImage &newImage)
 
 }
 
-bool ImageViewer::saveFile(const QString &fileName)
+bool ImageViewer::saveFile(const QString& fileName)
 {
-    QImageWriter writer(fileName);
+  QImageWriter writer(fileName);
 
-    if (!writer.write(image)) {
-        QMessageBox::information(this, QGuiApplication::applicationDisplayName(),
-                                 tr("Cannot write %1: %2")
-                                 .arg(QDir::toNativeSeparators(fileName)), writer.errorString());
-        return false;
-    }
-    const QString message = tr("Wrote \"%1\"").arg(QDir::toNativeSeparators(fileName));
-    statusBar()->showMessage(message);
-    return true;
+  if (!writer.write(image)) {
+    QMessageBox::information(this, QGuiApplication::applicationDisplayName(),
+      tr("Cannot write %1: %2")
+      .arg(QDir::toNativeSeparators(fileName)), writer.errorString());
+    return false;
+  }
+  const QString message = tr("Wrote \"%1\"").arg(QDir::toNativeSeparators(fileName));
+  statusBar()->showMessage(message);
+  return true;
 }
 
-static void initializeImageFileDialog(QFileDialog &dialog, QFileDialog::AcceptMode acceptMode)
+static void initializeImageFileDialog(QFileDialog& dialog, QFileDialog::AcceptMode acceptMode)
 {
-    static bool firstDialog = true;
+  static bool firstDialog = true;
 
-    if (firstDialog) {
-        firstDialog = false;
-        const QStringList picturesLocations = QStandardPaths::standardLocations(QStandardPaths::PicturesLocation);
-        dialog.setDirectory(picturesLocations.isEmpty() ? QDir::currentPath() : picturesLocations.last());
-    }
+  if (firstDialog) {
+    firstDialog = false;
+    const QStringList picturesLocations = QStandardPaths::standardLocations(QStandardPaths::PicturesLocation);
+    dialog.setDirectory(picturesLocations.isEmpty() ? QDir::currentPath() : picturesLocations.last());
+  }
 
-    QStringList mimeTypeFilters;
-    const QByteArrayList supportedMimeTypes = acceptMode == QFileDialog::AcceptOpen
-        ? QImageReader::supportedMimeTypes() : QImageWriter::supportedMimeTypes();
-    for (const QByteArray &mimeTypeName : supportedMimeTypes)
-        mimeTypeFilters.append(mimeTypeName);
-    mimeTypeFilters.sort();
-    dialog.setMimeTypeFilters(mimeTypeFilters);
-    dialog.selectMimeTypeFilter("image/jpeg");
-    if (acceptMode == QFileDialog::AcceptSave)
-        dialog.setDefaultSuffix("jpg");
+  QStringList mimeTypeFilters;
+  const QByteArrayList supportedMimeTypes = acceptMode == QFileDialog::AcceptOpen
+    ? QImageReader::supportedMimeTypes() : QImageWriter::supportedMimeTypes();
+  for (const QByteArray& mimeTypeName : supportedMimeTypes)
+    mimeTypeFilters.append(mimeTypeName);
+  mimeTypeFilters.sort();
+  dialog.setMimeTypeFilters(mimeTypeFilters);
+  dialog.selectMimeTypeFilter("image/jpeg");
+  if (acceptMode == QFileDialog::AcceptSave)
+    dialog.setDefaultSuffix("jpg");
+
 }
 
 void ImageViewer::open()
 {
-    QFileDialog dialog(this, tr("Open File"));
-    initializeImageFileDialog(dialog, QFileDialog::AcceptOpen);
-    while (dialog.exec() == QDialog::Accepted && !loadFile(dialog.selectedFiles().first())) {}
+  QFileDialog dialog(this, tr("Open File"));
+  initializeImageFileDialog(dialog, QFileDialog::AcceptOpen);
+
+  while (dialog.exec() == QDialog::Accepted && !loadFile(dialog.selectedFiles().first())) {}
 }
 
+
+void ImageViewer::saveAs()
+{
+  QFileDialog dialog(this, tr("Save File As"));
+  initializeImageFileDialog(dialog, QFileDialog::AcceptSave);
+
+
+  while (dialog.exec() == QDialog::Accepted && !saveFile(dialog.selectedFiles().first())) {}
+}
 
 
 
@@ -217,13 +234,7 @@ void ImageViewer::zoomOut()
 
 
 
-void ImageViewer::saveAs()
-{
-    QFileDialog dialog(this, tr("Save File As"));
-    initializeImageFileDialog(dialog, QFileDialog::AcceptSave);
 
-    while (dialog.exec() == QDialog::Accepted && !saveFile(dialog.selectedFiles().first())) {}
-}
 
 
 
@@ -243,7 +254,7 @@ void ImageViewer::paintPoint(int val){
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setPen(pen);
     painter->drawLine(imageLabel->begin, imageLabel->end);
-    
+
     imageAfterEffect = pixmapForPainting->toImage();
     if(val == 2){
         QUndoCommand *addCommand = new AddCommand(imageAfterEffect, image, this);
@@ -306,6 +317,7 @@ void ImageViewer::dialogIsFinished(int result){ //this is a slot
        undoStack->push(addCommand);
        return;
    }
+   w->slider->setValue(0);
    w->slider->setEnabled(true);
 }
 
@@ -378,7 +390,7 @@ void ImageViewer::initColorSizeWidget(QString title)
 void ImageViewer::showBrightnessEffect()
 {
     changeImage(image);
-    QObject::connect(w->slider, SIGNAL(valueChanged (int)), this, SLOT(brightnessAlgorithm(int)));
+    QObject::connect(w->slider, SIGNAL(sliderReleased()), this, SLOT(brightnessAlgorithm()));
     w->show();
 }
 
@@ -401,28 +413,36 @@ void ImageViewer::showSepia()
     w->show();
 }
 
-void ImageViewer::brightnessAlgorithm(int beta)
+void ImageViewer::brightnessAlgorithm()
 {
-    cv::Mat main_image = Convert::QImageToCvMat(image);
-    cv::Mat new_image = cv::Mat::zeros( main_image.size(), main_image.type() );
-    double alpha = 2.2; /*< Simple contrast control */
-    for( int y = 0; y < main_image.rows; y++ ) {
-            for( int x = 0; x < main_image.cols; x++ ) {
-                for( int c = 0; c < main_image.channels(); c++ ) {
-                    new_image.at<cv::Vec3b>(y,x)[c] =
-                      cv::saturate_cast<uchar>( alpha*main_image.at<cv::Vec3b>(y,x)[c] + beta );
+
+    int beta = w->slider->value();
+    if(beta != 0){
+        cv::Mat main_image = Convert::QImageToCvMat(image);
+        cv::Mat new_image = cv::Mat::zeros( main_image.size(), main_image.type() );
+        double alpha = 1.8;
+        for( int y = 0; y < main_image.rows; y++ ) {
+                for( int x = 0; x < main_image.cols; x++ ) {
+                    for( int c = 0; c < main_image.channels(); c++ ) {
+                        new_image.at<cv::Vec3b>(y,x)[c] =
+                          cv::saturate_cast<uchar>( alpha*main_image.at<cv::Vec3b>(y,x)[c] + beta );
+                    }
                 }
-            }
+        }
+        imageAfterEffect = Convert::cvMatToQImage(new_image);
+        changeImage(imageAfterEffect);
     }
-    imageAfterEffect = Convert::cvMatToQImage(new_image);
-    changeImage(imageAfterEffect);
+    else{
+        changeImage(image);
+    }
 }
 void ImageViewer::showHomogeneousEffect(){
     changeImage(image);
-    QObject::connect(w->slider, SIGNAL(valueChanged (int)), this, SLOT(homogeneousAlgorithm(int)));
+    QObject::connect(w->slider, SIGNAL(sliderReleased()), this, SLOT(homogeneousAlgorithm()));
     w->show();
 }
-void ImageViewer::homogeneousAlgorithm(int m){
+void ImageViewer::homogeneousAlgorithm(){
+    int m = w->slider->value();
     if(m < 2) m = 2;
     int MAX_KERNEL_LENGTH = m; //Регулировка интенсивности
     cv::Mat dst;
@@ -436,10 +456,12 @@ void ImageViewer::homogeneousAlgorithm(int m){
 }
 void ImageViewer::showGaussianEffect(){
     changeImage(image);
-    QObject::connect(w->slider, SIGNAL(valueChanged (int)), this, SLOT(gaussianAlgorithm(int)));
+    QObject::connect(w->slider, SIGNAL(sliderReleased()), this, SLOT(gaussianAlgorithm()));
     w->show();
 }
-void ImageViewer::gaussianAlgorithm(int m){
+
+void ImageViewer::gaussianAlgorithm(){
+    int m = w->slider->value();
     if(m < 2) m = 2;
     int MAX_KERNEL_LENGTH = m; //Регулировка интенсивности
     cv::Mat dst;
@@ -452,13 +474,14 @@ void ImageViewer::gaussianAlgorithm(int m){
 }
 void ImageViewer::showMedianEffect(){
     changeImage(image);
-    QObject::connect(w->slider, SIGNAL(valueChanged (int)), this, SLOT(medianAlgorithm(int)));
+    QObject::connect(w->slider, SIGNAL(sliderReleased()), this, SLOT(medianAlgorithm()));
     w->show();
 }
 
-void ImageViewer::medianAlgorithm(int m){
+void ImageViewer::medianAlgorithm(){
+    int m = w->slider->value();
     if(m < 2) m = 2;
-    int MAX_KERNEL_LENGTH = m; //Регулировка интенсивности
+    int MAX_KERNEL_LENGTH = m;
     cv::Mat dst;
     cv::Mat src = Convert::QImageToCvMat(image);
     for ( int i = 1; i < MAX_KERNEL_LENGTH; i = i + 2 ){
@@ -469,11 +492,12 @@ void ImageViewer::medianAlgorithm(int m){
 }
 void ImageViewer::showBilateralEffect(){
     changeImage(image);
-    QObject::connect(w->slider, SIGNAL(valueChanged (int)), this, SLOT(bilateralAlgorithm(int)));
+    QObject::connect(w->slider, SIGNAL(sliderReleased()), this, SLOT(bilateralAlgorithm()));
     w->show();
 
 }
-void ImageViewer::bilateralAlgorithm(int m){
+void ImageViewer::bilateralAlgorithm(){
+    int m = w->slider->value();
     if(m < 2) m = 2;
     int MAX_KERNEL_LENGTH = m; //Регулировка интенсивности
     cv::Mat dst;
