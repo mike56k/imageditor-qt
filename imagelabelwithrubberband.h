@@ -5,6 +5,11 @@
 #include <QPoint>
 #include <QMouseEvent>
 #include <QInputDialog>
+
+
+/*!
+ * \brief The ImageLabelWithRubberBand class наследуется от QLabel, дополняя его функциями обработки нажатия мыши
+ */
 class ImageLabelWithRubberBand : public QLabel
 {
    Q_OBJECT

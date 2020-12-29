@@ -18,9 +18,19 @@ class ColorSize : public QWidget
     Q_OBJECT
 
 public:
+    /*!
+     * \brief ColorSize создает виджет, инциализует ui элементы
+     * \param parent
+     */
     explicit ColorSize(QWidget *parent = nullptr);
     ~ColorSize();
+    /*!
+     * \brief changeColorBtn кнопка изменения цвета
+     */
     QPushButton *changeColorBtn = nullptr;
+    /*!
+     * \brief slider слайдер изменения размера
+     */
     QSlider *slider = nullptr;
 
 private:

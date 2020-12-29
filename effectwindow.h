@@ -8,7 +8,9 @@
 namespace Ui {
 class effectwindow;
 }
-
+/*!
+ * \brief The effectwindow class наследуется от QDialog, служит для предпросмотра примененного к изображению эффекта.
+ */
 class effectwindow : public QDialog
 {
     Q_OBJECT
@@ -32,8 +34,13 @@ public:
      */
     explicit effectwindow(QImage &beforeImage, QImage &afterImage, QImage &beforeHistogram, QImage &afterHistogram, QWidget *parent = nullptr);
     ~effectwindow();
+    /*!
+     * \brief slider слайдер изменения интенсивности эффекта
+     */
     QSlider *slider = nullptr;
-
+    /*!
+     * \brief imageAfter изображение после эффекта
+     */
     QImage imageAfter;
 private slots:
     /*!

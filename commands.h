@@ -10,7 +10,14 @@
 class AddCommand : public QUndoCommand
 {
 public:
-
+    /*!
+     * \brief AddCommand устанавливает поля image и imageBefore.
+     * Устанавливает изображение после совершения действия в главную форму.
+     * \param image изображение после действия
+     * \param imageBefore изображение до совершения действия
+     * \param mainWindow указатель на главную форму
+     * \param parent
+     */
     AddCommand(QImage &image, QImage &imageBefore, ImageViewer *mainWindow,
                QUndoCommand *parent = nullptr);
     /*!

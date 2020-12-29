@@ -54,8 +54,6 @@ QToolBar *ImageViewer::createToolBar()
 
 bool ImageViewer::loadFile(const QString &fileName)
 {
-    
-
     QImageReader reader(fileName);
     reader.setAutoTransform(true);
     const QImage newImage = reader.read();
@@ -65,11 +63,8 @@ bool ImageViewer::loadFile(const QString &fileName)
                                  .arg(QDir::toNativeSeparators(fileName), reader.errorString()));
         return false;
     }
-
     setImage(newImage);
-
     setWindowFilePath(fileName);
-
     const QString message = tr("Opened \"%1\", %2x%3, Depth: %4")
         .arg(QDir::toNativeSeparators(fileName)).arg(image.width()).arg(image.height()).arg(image.depth());
     statusBar()->showMessage(message);
@@ -80,7 +75,6 @@ void ImageViewer::setImage(const QImage &newImage)
 {
     image = newImage;
     imageAfterEffect = image;
-
     pixmapForPainting = new QPixmap(QPixmap::fromImage(image));
     painter = new QPainter(pixmapForPainting);
     w = new effectwindow(image, imageAfterEffect);
@@ -100,7 +94,6 @@ void ImageViewer::setImage(const QImage &newImage)
     updateActions();
     if (!fitToWindowAct->isChecked())
         imageLabel->adjustSize();
-
 }
 
 bool ImageViewer::saveFile(const QString& fileName)
@@ -136,8 +129,10 @@ static void initializeImageFileDialog(QFileDialog& dialog, QFileDialog::AcceptMo
   mimeTypeFilters.sort();
   dialog.setMimeTypeFilters(mimeTypeFilters);
   dialog.selectMimeTypeFilter("image/jpeg");
-  if (acceptMode == QFileDialog::AcceptSave)
-    dialog.setDefaultSuffix("jpg");
+  if (acceptMode == QFileDialog::AcceptSave){
+        dialog.setDefaultSuffix("jpg");
+  }
+
 
 }
 
@@ -152,11 +147,9 @@ void ImageViewer::open()
 
 void ImageViewer::saveAs()
 {
-  QFileDialog dialog(this, tr("Save File As"));
-  initializeImageFileDialog(dialog, QFileDialog::AcceptSave);
-
-
-  while (dialog.exec() == QDialog::Accepted && !saveFile(dialog.selectedFiles().first())) {}
+  QString filePath = QFileDialog::getSaveFileName(this, tr("Save File As"),
+                                                  QDir::currentPath(), tr("Images (*.png *.xpm *.jpg)"));
+  if(!filePath.isEmpty())  saveFile(filePath);
 }
 
 
@@ -202,7 +195,7 @@ void ImageViewer::normalSize()
 
 {
     imageLabel->adjustSize();
-    scaleFactor = 1;
+    scaleFactor = 1.0;
     countOfScales = 0;
     updateActions();
 }
@@ -212,8 +205,14 @@ void ImageViewer::fitToWindow()
 {
     bool fitToWindow = fitToWindowAct->isChecked();
     scrollArea->setWidgetResizable(fitToWindow);
-    if (!fitToWindow)
-        normalSize();
+
+    if (!fitToWindow){
+         normalSize();
+         updateActions();
+         return;
+    }
+    if(dockWidget != nullptr) dockWidget->close();
+    imageLabel->state = -1;
     updateActions();
 }
 
@@ -231,10 +230,6 @@ void ImageViewer::zoomOut()
     scaleImage(0.8);
 
 }
-
-
-
-
 
 
 
@@ -310,7 +305,7 @@ void ImageViewer::showSelectedArea()
     changeImage(imageAfterEffect);
     w->slider->setEnabled(false);
 }
-void ImageViewer::dialogIsFinished(int result){ //this is a slot
+void ImageViewer::dialogIsFinished(int result){
    if(result == QDialog::Accepted){
 
        QUndoCommand *addCommand = new AddCommand(imageAfterEffect, image, this);
@@ -337,6 +332,7 @@ void ImageViewer::paint()
 {
     if(paintAct->isChecked()){
         imageLabel->state = 1;
+        if(dockWidget != nullptr) dockWidget->close();
         initColorSizeWidget("Brush Settings");
     }
     else{
@@ -349,8 +345,8 @@ void ImageViewer::addText()
 {
     if(addTextAct->isChecked()){
         imageLabel->state = 2;
+        if(dockWidget != nullptr) dockWidget->close();
         initColorSizeWidget("Text Settings");
-
     }
     else{
         dockWidget->close();
@@ -373,7 +369,7 @@ void ImageViewer::closeEvent(QCloseEvent *)
 }
 void ImageViewer::initColorSizeWidget(QString title)
 {
-    ColorSize *colorSizeWidget = new ColorSize;
+    colorSizeWidget = new ColorSize;
 
     QObject::connect(colorSizeWidget->changeColorBtn, SIGNAL(clicked()), this, SLOT(changeColor()));
     colorSizeWidget->slider->setValue(penWidth);
@@ -386,6 +382,8 @@ void ImageViewer::initColorSizeWidget(QString title)
          dockWidget->setWidget(colorSizeWidget);
          addDockWidget(Qt::RightDockWidgetArea, dockWidget);
 }
+
+
 
 void ImageViewer::showBrightnessEffect()
 {
@@ -688,20 +686,78 @@ void ImageViewer::updateActions()
     blurGAct->setEnabled(!image.isNull());
     blurMAct->setEnabled(!image.isNull());
     blurBAct->setEnabled(!image.isNull());
-    cropAct->setEnabled(!fitToWindowAct->isChecked() && !paintAct->isChecked() && !addTextAct->isChecked() && countOfScales == 0);
-    paintAct->setEnabled(!fitToWindowAct->isChecked() && !addTextAct->isChecked() && !cropAct->isChecked() && countOfScales == 0);
-    addTextAct->setEnabled(!fitToWindowAct->isChecked() && !paintAct->isChecked() && !cropAct->isChecked() && countOfScales == 0);
-    zoomInAct->setEnabled(!cropAct->isChecked() && !fitToWindowAct->isChecked() && !paintAct->isChecked() && !addTextAct->isChecked() && countOfScales < 5);
-    zoomOutAct->setEnabled(!cropAct->isChecked() && !fitToWindowAct->isChecked() && !paintAct->isChecked() && !addTextAct->isChecked() && countOfScales > -5);
-    fitToWindowAct->setEnabled(!cropAct->isChecked() && !paintAct->isChecked() && !paintAct->isChecked() && !addTextAct->isChecked());
-    normalSizeAct->setEnabled(!cropAct->isChecked() && !fitToWindowAct->isChecked() && !paintAct->isChecked() && !addTextAct->isChecked() && countOfScales!=0);
+
+    cropAct->setEnabled(!image.isNull());
+    paintAct->setEnabled(!image.isNull());
+    addTextAct->setEnabled(!image.isNull());
+    zoomInAct->setEnabled(!image.isNull());
+    zoomOutAct->setEnabled(!image.isNull());
+    fitToWindowAct->setEnabled(!image.isNull());
+    normalSizeAct->setEnabled(!image.isNull());
+    if(imageLabel->state == 0 || imageLabel->state == 1 || imageLabel->state == 2){
+        if(fitToWindowAct->isChecked() || countOfScales != 0){
+            fitToWindowAct->setChecked(false);
+            fitToWindow();
+        }
+
+    }
+    if(fitToWindowAct->isChecked()){
+       paintAct->setChecked(false);
+       addTextAct->setChecked(false);
+       cropAct->setChecked(false);
+    }
+    switch (imageLabel->state) {
+    case 0: {
+        if(paintAct->isChecked()){
+            paintAct->setChecked(false);
+            paint();
+        }
+        if(addTextAct->isChecked()){
+            addTextAct->setChecked(false);
+            addText();
+        }
+        imageLabel->state = 0;
+        break;
+    }
+    case 1: {
+        if(cropAct->isChecked()){
+            cropAct->setChecked(false);
+            crop();
+        }
+        if(addTextAct->isChecked()){
+            addTextAct->setChecked(false);
+            addText();
+        }
+        imageLabel->state = 1;
+        break;
+    }
+    case 2: {
+        if(cropAct->isChecked()){
+            cropAct->setChecked(false);
+            crop();
+        }
+        if(paintAct->isChecked()){
+            paintAct->setChecked(false);
+            paint();
+        }
+        imageLabel->state = 2;
+        break;
+    }
+    default:
+        break;
+    }
+
+    zoomInAct->setEnabled(!cropAct->isChecked() && !fitToWindowAct->isChecked() &&
+                          !paintAct->isChecked() && !addTextAct->isChecked() && countOfScales < 5);
+    zoomOutAct->setEnabled(!cropAct->isChecked() && !fitToWindowAct->isChecked() &&
+                           !paintAct->isChecked() && !addTextAct->isChecked() && countOfScales > -5);
+    normalSizeAct->setEnabled(countOfScales!=0);
 
 }
 
 
 
 void ImageViewer::scaleImage(double factor)
-
 {
     scaleFactor *= factor;
     imageLabel->resize(scaleFactor * imageLabel->pixmap(Qt::ReturnByValue).size());
