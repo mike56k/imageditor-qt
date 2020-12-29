@@ -147,8 +147,11 @@ void ImageViewer::open()
 
 void ImageViewer::saveAs()
 {
+   const QStringList picturesLocations = QStandardPaths::standardLocations(QStandardPaths::PicturesLocation);
+
   QString filePath = QFileDialog::getSaveFileName(this, tr("Save File As"),
-                                                  QDir::currentPath(), tr("Images (*.png *.xpm *.jpg)"));
+                                                  picturesLocations.isEmpty() ? QDir::currentPath() : picturesLocations.last(),
+                                                  tr("Images (*.png *.xpm *.jpg)"));
   if(!filePath.isEmpty())  saveFile(filePath);
 }
 
