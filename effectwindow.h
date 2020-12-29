@@ -20,7 +20,7 @@ public:
      * \brief effectwindow Конструктор класса effectwindow. Создает форму с двумя изображениями "до" и "после" эффекта.
      * \param beforeImage Изображение до эффекта.
      * \param afterImage Изображение после эффекта.
-     * \param parent
+     * \param parent Родительский виджет
      */
     explicit effectwindow(QImage &beforeImage, QImage &afterImage, QWidget *parent = nullptr);
     /*!
@@ -30,7 +30,7 @@ public:
      * \param afterImage Изображение после эффекта.
      * \param beforeHistogram Гистограмма изображения до эффекта.
      * \param afterHistogram Гистограмма изображения после эффекта.
-     * \param parent
+     * \param parent Родительский виджет
      */
     explicit effectwindow(QImage &beforeImage, QImage &afterImage, QImage &beforeHistogram, QImage &afterHistogram, QWidget *parent = nullptr);
     ~effectwindow();
@@ -49,7 +49,7 @@ private slots:
     void repaintEffectWindow();
 private:
     /*!
-     * \brief init Функция для инициализацию форм с двумя изображениями.
+     * \brief init Функция, в которую вынесены действия для инициализации форм с двумя изображениями.
      * \param afterImage Изображение после эффекта.
      * \param beforeImage Изображение до эффекта.
      */

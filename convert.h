@@ -19,13 +19,13 @@ public:
     Convert() = default;
     /*!
      * \brief cvMatToQImage Конвертирует cv::Mat в QImage
-     * \param inMat
+     * \param inMat входное изображение в формате cv::Mat
      * \return Возвращает QImage
      */
     static QImage  cvMatToQImage( const cv::Mat &inMat );
     /*!
      * \brief QImageToCvMat Конвертирует QImage в cv::Mat
-     * \param inImage
+     * \param inImage входное изображение в формате QImage
      * \return Возвращает cv::Mat
      */
     static cv::Mat QImageToCvMat( const QImage &inImage);

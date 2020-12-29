@@ -14,6 +14,10 @@ class ImageLabelWithRubberBand : public QLabel
 {
    Q_OBJECT
 public:
+    /*!
+     * \brief ImageLabelWithRubberBand конструктор, устанавливающий значение по умолчанию в rubberBand
+     * \param parent Родительский виджет
+     */
     explicit ImageLabelWithRubberBand(QWidget *parent = 0) : QLabel(parent), rubberBand(0) {}
     /*!
      * \brief begin Координаты начала обрезки/рисования/текста
@@ -57,21 +61,21 @@ private:
     * 1) Инициализирует параметры для обрезки изображения
     * 2) Инициализирует параметры для рисования
     * 3) Устанавливает координаты наложенного текста и вызывает текстовое окно
-    * \param event
+    * \param event событие мыши
    */
    void mousePressEvent(QMouseEvent *event);
    /*!
     * \brief mouseMoveEvent
     * 1) устанавливает выделенную область при движении в режиме обрезки
     * 2) устанавливает координаты новой точки в режиме рисования
-    * \param event
+    * \param event событие мыши
     */
    void mouseMoveEvent(QMouseEvent *event);
    /*!
     * \brief mouseReleaseEvent
     * 1) Отправляет выделенную область в режиме обрезки
     * 2) Устанавливает финальную точку в режиме рисования, сообщает о завершении
-    * \param event
+    * \param event событие мыши
     */
    void mouseReleaseEvent(QMouseEvent *event);
 

@@ -5,7 +5,6 @@ cv::Mat Convert::QImageToCvMat(const QImage &inImage)
 {
     switch ( inImage.format() )
     {
-       /// 8-бит, 4 канала
        case QImage::Format_ARGB32:
        case QImage::Format_ARGB32_Premultiplied:
        {
@@ -18,7 +17,6 @@ cv::Mat Convert::QImageToCvMat(const QImage &inImage)
           return mat;
        }
 
-       /// 8-бит, 3 канала
        case QImage::Format_RGB32:
        {
 
@@ -35,7 +33,6 @@ cv::Mat Convert::QImageToCvMat(const QImage &inImage)
           return matNoAlpha;
        }
 
-       // 8-bit, 3 channel
        case QImage::Format_RGB888:
        {
 
@@ -49,7 +46,6 @@ cv::Mat Convert::QImageToCvMat(const QImage &inImage)
                           ).clone();
        }
 
-       // 8-bit, 1 channel
        case QImage::Format_Indexed8:
        {
           cv::Mat  mat( inImage.height(), inImage.width(),
@@ -74,7 +70,6 @@ QImage Convert::cvMatToQImage(const cv::Mat &inMat)
 {
     switch ( inMat.type() )
     {
-       /// 8-бит, 4 канала
        case CV_8UC4:
        {
           QImage image( inMat.data,
@@ -85,7 +80,6 @@ QImage Convert::cvMatToQImage(const cv::Mat &inMat)
           return image;
        }
 
-       /// 8-бит, 3 канала
        case CV_8UC3:
        {
           QImage image( inMat.data,
@@ -95,8 +89,6 @@ QImage Convert::cvMatToQImage(const cv::Mat &inMat)
 
           return image.rgbSwapped();
        }
-
-       /// 8-бит, 1 канал
        case CV_8UC1:
        {
 

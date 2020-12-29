@@ -20,7 +20,7 @@ class ColorSize : public QWidget
 public:
     /*!
      * \brief ColorSize создает виджет, инциализует ui элементы
-     * \param parent
+     * \param parent Родительский виджет
      */
     explicit ColorSize(QWidget *parent = nullptr);
     ~ColorSize();

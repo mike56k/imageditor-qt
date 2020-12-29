@@ -52,7 +52,7 @@ class ImageViewer : public QMainWindow
 public:
     /*!
      * \brief ImageViewer устанавливает начальные параметры главного окна и изображения в нем, создает стэк действий.
-     * \param parent
+     * \param parent Родительский виджет
      */
     ImageViewer(QWidget *parent = nullptr);
     /*!
@@ -200,7 +200,7 @@ private slots:
     void addText();
     /*!
      * \brief closeEvent перегруженный слот закрытия формы. Предлагает сохранить изображение перед закрытием приложения
-     * \param event
+     * \param event Событие закрытия формы
      */
     void closeEvent(QCloseEvent *event);
 signals:

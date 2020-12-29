@@ -575,6 +575,7 @@ void ImageViewer::createActions()
 
     saveAsAct = fileMenu->addAction(QPixmap(":/icons/save.png"), tr("&Save As..."), this, &ImageViewer::saveAs);
     saveAsAct->setEnabled(false);
+    saveAsAct->setShortcut(tr("Ctrl+S"));
 
 
     fileMenu->addSeparator();
@@ -635,7 +636,7 @@ void ImageViewer::createActions()
     zoomOutAct->setEnabled(false);
 
     normalSizeAct = viewMenu->addAction(QPixmap(":/icons/reduce.png"),tr("&Normal Size"), this, &ImageViewer::normalSize);
-    normalSizeAct->setShortcut(tr("Ctrl+S"));
+    normalSizeAct->setShortcut(tr("Ctrl+W"));
     normalSizeAct->setEnabled(false);
 
     viewMenu->addSeparator();
