@@ -120,7 +120,6 @@ compile_commands.json
 .clangd/
 /*-debug/
 /*-release/
-/build*/
 /dist/gdb/*.gz
 /dist/gdb/python/
 /dist/gdb/qtcreator-*/
