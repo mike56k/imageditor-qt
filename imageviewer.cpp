@@ -5,7 +5,8 @@
 #include <QFileDialog>
 #include <QImageReader>
 #include <QImageWriter>
-
+#include <QErrorMessage>
+#include <iostream>
 #include "commands.h"
 ImageViewer::ImageViewer(QWidget *parent)
    : QMainWindow(parent), imageLabel(new ImageLabelWithRubberBand)
@@ -129,19 +130,23 @@ static void initializeImageFileDialog(QFileDialog& dialog, QFileDialog::AcceptMo
   mimeTypeFilters.sort();
   dialog.setMimeTypeFilters(mimeTypeFilters);
   dialog.selectMimeTypeFilter("image/jpeg");
-  if (acceptMode == QFileDialog::AcceptSave){
-        dialog.setDefaultSuffix("jpg");
-  }
 
 
 }
 
 void ImageViewer::open()
 {
-  QFileDialog dialog(this, tr("Open File"));
-  initializeImageFileDialog(dialog, QFileDialog::AcceptOpen);
+//  QFileDialog dialog(this, tr("Open File"));
+//  initializeImageFileDialog(dialog, QFileDialog::AcceptOpen);
 
-  while (dialog.exec() == QDialog::Accepted && !loadFile(dialog.selectedFiles().first())) {}
+//  while (dialog.exec() == QDialog::Accepted && !loadFile(dialog.selectedFiles().first())) {}
+  ////////////////////
+  const QStringList picturesLocations = QStandardPaths::standardLocations(QStandardPaths::PicturesLocation);
+  QString filePath = QFileDialog::getOpenFileName(this, tr("Open File"),
+                                                  picturesLocations.isEmpty() ? QDir::currentPath() : picturesLocations.last(),
+                                                  tr("All files (*.*);;JPEG (*.jpg *.jpeg);;PNG (*.png)" ));
+  if(!filePath.isEmpty()) loadFile(filePath);
+
 }
 
 
@@ -406,7 +411,7 @@ void ImageViewer::showSepia()
     cv::transform(src, dst, kern);
     cv::Mat temp;
     cvtColor(dst, temp,CV_BGR2RGB);
-    QImage dest((const uchar *) temp.data, temp.cols, temp.rows, temp.step, QImage::Format_RGB888);
+    QImage dest((const uchar *) temp.data, int(temp.cols), int(temp.rows), int(temp.step), QImage::Format_RGB888);
     dest.bits();
     imageAfterEffect = dest;
     changeImage(imageAfterEffect);
@@ -419,17 +424,34 @@ void ImageViewer::brightnessAlgorithm()
 
     int beta = w->slider->value();
     if(beta != 0){
+
+
         cv::Mat main_image = Convert::QImageToCvMat(image);
+
+        ////////////
+        cv::Mat temp;
+        cvtColor(main_image, temp,CV_BGR2RGB);
+        QImage dest((const uchar *) temp.data, int(temp.cols), int(temp.rows), int(temp.step), QImage::Format_RGB888);
+        dest.bits();
+        image = dest;
+        //////////////
+        main_image = Convert::QImageToCvMat(image);
         cv::Mat new_image = cv::Mat::zeros( main_image.size(), main_image.type() );
+
+
         double alpha = 1.8;
         for( int y = 0; y < main_image.rows; y++ ) {
                 for( int x = 0; x < main_image.cols; x++ ) {
                     for( int c = 0; c < main_image.channels(); c++ ) {
-                        new_image.at<cv::Vec3b>(y,x)[c] =
-                          cv::saturate_cast<uchar>( alpha*main_image.at<cv::Vec3b>(y,x)[c] + beta );
+
+                            new_image.at<cv::Vec3b>(y,x)[c] =
+                              cv::saturate_cast<uchar>( alpha*main_image.at<cv::Vec3b>(y,x)[c] + beta );
+
+
                     }
                 }
         }
+
         imageAfterEffect = Convert::cvMatToQImage(new_image);
         changeImage(imageAfterEffect);
     }
@@ -503,6 +525,16 @@ void ImageViewer::bilateralAlgorithm(){
     int MAX_KERNEL_LENGTH = m; //Регулировка интенсивности
     cv::Mat dst;
     cv::Mat src = Convert::QImageToCvMat(image);
+
+    cv::Mat temp;
+    cvtColor(src, temp,CV_BGR2RGB);
+    QImage dest((const uchar *) temp.data, int(temp.cols), int(temp.rows), int(temp.step), QImage::Format_RGB888);
+    dest.bits();
+    image = dest;
+
+    src = Convert::QImageToCvMat(image);
+
+
     for ( int i = 1; i < MAX_KERNEL_LENGTH; i = i + 2 ){
             bilateralFilter ( src, dst, i, i*2, i/2 );
     }

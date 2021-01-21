@@ -1,6 +1,5 @@
 #include "convert.h"
 
-
 cv::Mat Convert::QImageToCvMat(const QImage &inImage)
 {
     switch ( inImage.format() )

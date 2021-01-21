@@ -5,8 +5,9 @@
 #include <QMainWindow>
 #include <QImage>
 
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc/imgproc_c.h>
+
+
+
 #include <convert.h>
 #include <QUndoStack>
 #include <QUndoCommand>

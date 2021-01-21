@@ -4,6 +4,7 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/imgproc/types_c.h>
 
 #include <QImage>
 #include <QDebug>
@@ -13,6 +14,7 @@
  * для конвертации изображений в различные форматы, используемые
  * в проекте.
  */
+
 class Convert
 {
 public:
@@ -29,6 +31,9 @@ public:
      * \return Возвращает cv::Mat
      */
     static cv::Mat QImageToCvMat( const QImage &inImage);
+
+
+
 };
 
 #endif // CONVERT_H

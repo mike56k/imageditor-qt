@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
+
 project(cmakeImageEditor LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -22,9 +23,7 @@ set(BUILD_SHARED_LIBS OFF)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 
-#set(OpenCV_install_DIR ${OpenCV_install_DIR})
 
-#set(OpenCV_install_DIR ${OpenCV_DIR} CACHE PATH "Path to OpenCV Libs")
 
 find_package(OpenCV REQUIRED )
 include_directories(${OpenCV_INCLUDE_DIRS})
@@ -53,34 +52,51 @@ add_executable(cmakeImageEditor
     colorsize.h
     colorsize.ui
 )
-install(FILES $<TARGET_FILE:Qt5::Widgets> DESTINATION ${PROJECT_BINARY_DIR}/Release CONFIGURATIONS Release)
-install(FILES $<TARGET_FILE:Qt5::Widgets> DESTINATION ${PROJECT_BINARY_DIR}/Debug CONFIGURATIONS Debug)
 
-install(FILES $<TARGET_FILE:Qt5::Gui> DESTINATION ${PROJECT_BINARY_DIR}/Release CONFIGURATIONS Release)
-install(FILES $<TARGET_FILE:Qt5::Gui> DESTINATION ${PROJECT_BINARY_DIR}/Debug CONFIGURATIONS Debug)
+find_package(Doxygen)
+if (DOXYGEN_FOUND)
+  set(doxyfile_cfg ${CMAKE_CURRENT_BINARY_DIR}/doxyfile.cfg)
 
-install(FILES $<TARGET_FILE:Qt5::Core> DESTINATION ${PROJECT_BINARY_DIR}/Release CONFIGURATIONS Release)
-install(FILES $<TARGET_FILE:Qt5::Core> DESTINATION ${PROJECT_BINARY_DIR}/Debug CONFIGURATIONS Debug)
+  add_custom_target(get_doc ALL
+                                        COMMAND ${DOXYGEN_EXECUTABLE} ${doxyfile_cfg}
+                                        COMMENT "Generating API documentation with Doxygen"
+                                        VERBATIM)
+endif()
 
-#install(DIRECTORY ${OpenCV_install_DIR}/
-#DESTINATION ${PROJECT_BINARY_DIR}/Release USE_SOURCE_PERMISSIONS
-#CONFIGURATIONS Release)
-#install(DIRECTORY ${OpenCV_install_DIR}/
-#DESTINATION ${PROJECT_BINARY_DIR}/Debug USE_SOURCE_PERMISSIONS
-#CONFIGURATIONS Debug)
+set(dir_src_doc ${CMAKE_CURRENT_BINARY_DIR}/doc/rtf/)
+install(
+        DIRECTORY
+                "${dir_src_doc}"
+        DESTINATION
+                doc
+)
 
+install(FILES $<TARGET_FILE:Qt5::Widgets> DESTINATION bin)
+
+
+install(FILES $<TARGET_FILE:Qt5::Gui> DESTINATION bin)
+
+
+install(FILES $<TARGET_FILE:Qt5::Core> DESTINATION bin)
+
+
+install(
+        TARGETS
+                cmakeImageEditor
+        DESTINATION
+                bin
+)
+
+
+install(FILES $<TARGET_FILE:opencv_world> DESTINATION bin)
 
 install(DIRECTORY ${QT_MAIN_DIR}/plugins/platforms/
-            DESTINATION ${PROJECT_BINARY_DIR}/Release/Plugins/platforms USE_SOURCE_PERMISSIONS
-            CONFIGURATIONS Release)
-install(DIRECTORY ${QT_MAIN_DIR}/plugins/platforms/
-                DESTINATION ${PROJECT_BINARY_DIR}/Debug/Plugins/platforms USE_SOURCE_PERMISSIONS
-                CONFIGURATIONS Debug)
+            DESTINATION bin/Plugins/platforms)
+
 install(DIRECTORY ${QT_MAIN_DIR}/plugins/imageformats/
-                DESTINATION ${PROJECT_BINARY_DIR}/Release/Plugins/imageformats USE_SOURCE_PERMISSIONS
-                CONFIGURATIONS Release)
-install(DIRECTORY ${QT_MAIN_DIR}/plugins/imageformats/
-                DESTINATION ${PROJECT_BINARY_DIR}/Debug/Plugins/imageformats USE_SOURCE_PERMISSIONS
-                CONFIGURATIONS Debug)
+                DESTINATION bin/Plugins/imageformats)
+
+
+
 
 target_link_libraries(cmakeImageEditor PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${OpenCV_LIBS} PRIVATE Qt5::Gui)
