@@ -364,15 +364,35 @@ void ImageViewer::addText()
 
 }
 
-void ImageViewer::closeEvent(QCloseEvent *)
+void ImageViewer::closeEvent(QCloseEvent *event)
 {
+
+
+
+
     if(!image.isNull()){
-        QMessageBox::StandardButton ret;
-            ret = QMessageBox::question( this,  QApplication::applicationName(), tr("Do you want to save image before closing Image Editor?"),
-                                         QMessageBox::Yes | QMessageBox::No , QMessageBox::No );
-            if(ret == QMessageBox::Yes){
-                saveAs();
-            }
+        QMessageBox msgBox;
+        msgBox.setText("The file has been modified.");
+        msgBox.setInformativeText("Do you want to save your changes?");
+        msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+        msgBox.setDefaultButton(QMessageBox::Save);
+        int ret = msgBox.exec();
+        switch (ret) {
+          case QMessageBox::Save:
+              saveAs();
+              event->accept();
+              break;
+          case QMessageBox::Discard:
+               event->accept();
+              break;
+          case QMessageBox::Cancel:
+            event->ignore();
+            break;
+          default:
+              // should never be reached
+              break;
+        }
+
     }
 }
 void ImageViewer::initColorSizeWidget(QString title)
