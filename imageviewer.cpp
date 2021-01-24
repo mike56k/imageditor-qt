@@ -79,6 +79,8 @@ void ImageViewer::setImage(const QImage &newImage)
     pixmapForPainting = new QPixmap(QPixmap::fromImage(image));
     painter = new QPainter(pixmapForPainting);
     w = new effectwindow(image, imageAfterEffect);
+    image = pixmapForPainting->toImage();
+    imageAfterEffect = pixmapForPainting->toImage();
     w->setModal(true);
     QObject::connect(w, SIGNAL(finished (int)), this, SLOT(dialogIsFinished(int)));
     QObject::connect(this, SIGNAL(imageChanged()), w, SLOT(repaintEffectWindow()));
@@ -131,16 +133,11 @@ static void initializeImageFileDialog(QFileDialog& dialog, QFileDialog::AcceptMo
   dialog.setMimeTypeFilters(mimeTypeFilters);
   dialog.selectMimeTypeFilter("image/jpeg");
 
-
 }
 
 void ImageViewer::open()
 {
-//  QFileDialog dialog(this, tr("Open File"));
-//  initializeImageFileDialog(dialog, QFileDialog::AcceptOpen);
 
-//  while (dialog.exec() == QDialog::Accepted && !loadFile(dialog.selectedFiles().first())) {}
-  ////////////////////
   const QStringList picturesLocations = QStandardPaths::standardLocations(QStandardPaths::PicturesLocation);
   QString filePath = QFileDialog::getOpenFileName(this, tr("Open File"),
                                                   picturesLocations.isEmpty() ? QDir::currentPath() : picturesLocations.last(),
@@ -225,7 +222,6 @@ void ImageViewer::fitToWindow()
 }
 
 void ImageViewer::zoomIn()
-
 {
     countOfScales++;
     scaleImage(1.25);
@@ -367,9 +363,6 @@ void ImageViewer::addText()
 void ImageViewer::closeEvent(QCloseEvent *event)
 {
 
-
-
-
     if(!image.isNull()){
         QMessageBox msgBox;
         msgBox.setText("The file has been modified.");
@@ -447,14 +440,11 @@ void ImageViewer::brightnessAlgorithm()
 
 
         cv::Mat main_image = Convert::QImageToCvMat(image);
-
-        ////////////
         cv::Mat temp;
         cvtColor(main_image, temp,CV_BGR2RGB);
         QImage dest((const uchar *) temp.data, int(temp.cols), int(temp.rows), int(temp.step), QImage::Format_RGB888);
         dest.bits();
         image = dest;
-        //////////////
         main_image = Convert::QImageToCvMat(image);
         cv::Mat new_image = cv::Mat::zeros( main_image.size(), main_image.type() );
 
